@@ -41,8 +41,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .body{height:1000px;flex:0 0 1000px;width:100%;display:flex;flex-direction:column;gap:40px}
 .stats{display:flex;gap:54px;align-items:center;padding:0 40px;flex:0 0 auto;overflow:hidden}
 .stat{display:flex;gap:16px;align-items:flex-start;flex:0 0 auto;overflow:hidden}
-.stat-icon{width:30px;height:30px;flex:0 0 30px;overflow:hidden}
-.stat-icon img{width:30px;height:30px;display:block}
+.stat-icon{width:30px;height:30px;flex:0 0 30px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.stat-icon img{width:100%;height:100%;display:block;object-fit:contain;object-position:center}
 .stat-copy{display:flex;gap:16px;align-items:flex-end;color:#282828}
 .stat-value{font-size:50px;font-weight:400;line-height:.8;letter-spacing:-1px;white-space:nowrap}
 .stat-label{width:109px;font-size:16px;font-weight:400;line-height:1.3;color:#282828}
@@ -137,10 +137,11 @@ const K1 = {
   nodeW: 17,
   gap: 14,
   steps: KIT_STEPS,
+  entries: [["activated", 8, "good"]],
   nodes: [
-    ["activated", 0, "Activated", 12, "good", "left"],
-    ["completed", 1, "Completed", 10, "good"],
-    ["both", 2, "Both", 8, "good"],
+    ["activated", 0, "Activated", 8, "good", "left"],
+    ["completed", 1, "Completed", 7, "good"],
+    ["both", 2, "Both", 6, "good"],
     ["bacteria", 2, "Only bacteria", 1, "neut"],
     ["fungi", 2, "Only fungi", 1, "neut"],
     ["generated", 3, "Generated", 4, "yellow"],
@@ -149,8 +150,8 @@ const K1 = {
     ["seen", 6, "Seen", 2, "yellow"],
   ],
   links: [
-    ["activated", "completed", 10, "good"],
-    ["completed", "both", 8, "good"],
+    ["activated", "completed", 7, "good"],
+    ["completed", "both", 6, "good"],
     ["completed", "bacteria", 1, "neut"],
     ["completed", "fungi", 1, "neut"],
     ["both", "generated", 4, "yellow"],
@@ -162,22 +163,23 @@ const K1 = {
 
 const K2 = {
   ...K1,
+  entries: [["activated", 8, "good"]],
   nodes: [
-    ["activated", 0, "Activated", 7, "good", "left"],
-    ["completed", 1, "Completed", 5, "good"],
-    ["both", 2, "Both", 4, "good"],
+    ["activated", 0, "Activated", 8, "good", "left"],
+    ["completed", 1, "Completed", 7, "good"],
+    ["both", 2, "Both", 6, "good"],
     ["bacteria", 2, "Only bacteria", 1, "neut"],
-    ["fungi", 2, "Only fungi", 0, "neut"],
+    ["fungi", 2, "Only fungi", 1, "neut"],
     ["generated", 3, "Generated", 4, "yellow"],
     ["approved", 4, "Approved", 3, "yellow"],
     ["released", 5, "Released", 2, "yellow"],
     ["seen", 6, "Seen", 2, "yellow"],
   ],
   links: [
-    ["activated", "completed", 5, "good"],
-    ["completed", "both", 4, "good"],
+    ["activated", "completed", 7, "good"],
+    ["completed", "both", 6, "good"],
     ["completed", "bacteria", 1, "neut"],
-    ["completed", "fungi", 0, "neut"],
+    ["completed", "fungi", 1, "neut"],
     ["both", "generated", 4, "yellow"],
     ["generated", "approved", 3, "yellow"],
     ["approved", "released", 2, "yellow"],
@@ -218,7 +220,31 @@ function build(cfg) {
 
   const out = {};
   const incoming = {};
-  const paths = cfg.links
+  const entryPaths = (cfg.entries || [])
+    .filter(([to, value]) => value > 0 && map[to])
+    .map(([to, value, type]) => {
+      const target = map[to];
+      const sw = Math.min(value * cfg.scale, target.h);
+      const targetOffset = incoming[to] || 0;
+      incoming[to] = targetOffset + sw;
+
+      const x1 = 0;
+      const y1 = target.y + targetOffset + sw / 2;
+      const x2 = target.x;
+      const y2 = y1;
+      const mx = (x1 + x2) / 2;
+
+      return {
+        id: `entry-${to}`,
+        from: null,
+        to,
+        d: `M${x1} ${y1} C${mx} ${y1},${mx} ${y2},${x2} ${y2}`,
+        sw,
+        type,
+      };
+    });
+
+  const linkedPaths = cfg.links
     .filter(([from, to, value]) => value > 0 && map[from] && map[to])
     .map(([from, to, value, type]) => {
       const source = map[from];
@@ -246,7 +272,7 @@ function build(cfg) {
       };
     });
 
-  return { nodes: Object.values(map), paths };
+  return { nodes: Object.values(map), paths: [...entryPaths, ...linkedPaths] };
 }
 
 function Sankey({ cfg, chartId, hovered, onHover }) {
@@ -328,11 +354,29 @@ function Sankey({ cfg, chartId, hovered, onHover }) {
   );
 }
 
+function getVisibleViewportSize(viewport) {
+  const rect = viewport.getBoundingClientRect();
+  const visibleWidth = Math.max(
+    0,
+    Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0),
+  );
+  const visibleHeight = Math.max(
+    0,
+    Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
+  );
+
+  return {
+    width: Math.min(viewport.clientWidth, visibleWidth || viewport.clientWidth),
+    height: Math.min(viewport.clientHeight, visibleHeight || viewport.clientHeight),
+  };
+}
+
 function clampPan(point, viewport, canvas) {
   if (!viewport || !canvas) return point;
 
-  const minX = Math.min(0, viewport.clientWidth - canvas.offsetWidth - 48);
-  const minY = Math.min(0, viewport.clientHeight - canvas.offsetHeight - 48);
+  const visible = getVisibleViewportSize(viewport);
+  const minX = Math.min(0, visible.width - canvas.offsetWidth - 48);
+  const minY = Math.min(0, visible.height - canvas.offsetHeight - 48);
 
   return {
     x: Math.max(minX, Math.min(0, point.x)),
@@ -353,16 +397,23 @@ function DiagramBoard({ children }) {
   );
 
   useEffect(() => {
-    if (typeof ResizeObserver === "undefined") return undefined;
-
-    const observer = new ResizeObserver(() => {
+    const handleViewportChange = () => {
       setPan((current) => constrainPan(current));
-    });
+    };
 
-    if (viewportRef.current) observer.observe(viewportRef.current);
-    if (canvasRef.current) observer.observe(canvasRef.current);
+    const observer = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(handleViewportChange);
 
-    return () => observer.disconnect();
+    if (observer && viewportRef.current) observer.observe(viewportRef.current);
+    if (observer && canvasRef.current) observer.observe(canvasRef.current);
+
+    window.addEventListener("resize", handleViewportChange);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", handleViewportChange);
+    };
   }, [constrainPan]);
 
   const handlePointerDown = (event) => {
