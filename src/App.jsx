@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import * as React from "react";
 import { createRoot } from "react-dom/client";
+
+const { useEffect, useState } = React;
 
 const styles = `
   * { box-sizing: border-box; }
@@ -60,7 +62,7 @@ const styles = `
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-top: 10px;
+    margin: 10px 0;
     padding: 8px 12px;
     background: #e7f2f0;
     border-radius: 10px;
