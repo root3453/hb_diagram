@@ -1,0 +1,135 @@
+name: Apply dynamic chart container fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-dynamic-chart-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Run dynamic chart container migration'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch App.jsx
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/App.jsx')
+          text = path.read_text()
+
+          replacements = [
+              (
+                  't2: { only_bacteria_arrived: 3, only_fungi_arrived: 1, both_arrived: 7 },',
+                  't2: { only_bacteria_arrived: 2, only_fungi_arrived: 1, both_arrived: 7 },',
+              ),
+              (
+                  '.diagram-canvas{position:absolute;left:24px;top:24px;width:1893px;height:870px;display:flex;align-items:flex-start;gap:56px;will-change:transform}',
+                  '.diagram-canvas{position:absolute;left:24px;top:24px;width:1893px;min-height:870px;height:auto;display:flex;align-items:flex-start;gap:56px;will-change:transform}',
+              ),
+              (
+                  '.test-chart{width:1022px;height:221px}',
+                  '.test-chart{width:1022px}',
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Missing expected source fragment: {old}')
+              text = text.replace(old, new, 1)
+
+          marker = 'function build(cfg) {'
+          helper = '''function getRequiredChartHeight(cfg) {
+            let maxBottom = cfg.top;
+
+            cfg.steps.forEach((_, step) => {
+              let y = cfg.top;
+
+              cfg.nodes
+                .filter((node) => node[1] === step && node[3] > 0)
+                .forEach((node) => {
+                  y += node[3] * cfg.scale;
+                  maxBottom = Math.max(maxBottom, y);
+                  y += cfg.gap;
+                });
+            });
+
+            return Math.max(cfg.h, Math.ceil(maxBottom + 24));
+          }
+
+          '''
+
+          if helper.strip() not in text:
+              if marker not in text:
+                  raise SystemExit('Missing build() marker')
+              text = text.replace(marker, helper + marker, 1)
+
+          old = '''function Sankey({ cfg, chartId, hovered, onHover }) {
+            const data = useMemo(() => build(cfg), [cfg]);
+            const hasHoveredLabel = hovered !== null;
+            const activeChart = hovered?.chartId === chartId;
+
+            return (
+              <div className="stage" style={{ "--w": `${cfg.w}px`, "--h": `${cfg.h}px` }}>
+                <div className="inner">
+                  <svg className="svg" width={cfg.w} height={cfg.h} viewBox={`0 0 ${cfg.w} ${cfg.h}`}>
+          '''
+
+          new = '''function Sankey({ cfg, chartId, hovered, onHover }) {
+            const data = useMemo(() => build(cfg), [cfg]);
+            const chartHeight = getRequiredChartHeight(cfg);
+            const hasHoveredLabel = hovered !== null;
+            const activeChart = hovered?.chartId === chartId;
+
+            return (
+              <div className="stage" style={{ "--w": `${cfg.w}px`, "--h": `${chartHeight}px` }}>
+                <div className="inner">
+                  <svg className="svg" width={cfg.w} height={chartHeight} viewBox={`0 0 ${cfg.w} ${chartHeight}`}>
+          '''
+
+          if old not in text:
+              raise SystemExit('Missing Sankey header fragment')
+          text = text.replace(old, new, 1)
+
+          old = '''                        <div className="chart test-chart">
+                          <Sankey cfg={K1} chartId="test-1" hovered={hovered} onHover={setHovered} />
+          '''
+          new = '''                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K1) }}>
+                          <Sankey cfg={K1} chartId="test-1" hovered={hovered} onHover={setHovered} />
+          '''
+          if old not in text:
+              raise SystemExit('Missing Test 1 chart fragment')
+          text = text.replace(old, new, 1)
+
+          old = '''                        <div className="chart test-chart">
+                          <Sankey cfg={K2} chartId="test-2" hovered={hovered} onHover={setHovered} />
+          '''
+          new = '''                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K2) }}>
+                          <Sankey cfg={K2} chartId="test-2" hovered={hovered} onHover={setHovered} />
+          '''
+          if old not in text:
+              raise SystemExit('Missing Test 2 chart fragment')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit fix and remove temporary workflow
+        run: |
+          rm .github/workflows/apply-dynamic-chart-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.jsx .github/workflows/apply-dynamic-chart-fix.yml
+          git commit -m "Fix dynamic test chart heights"
+          git push
