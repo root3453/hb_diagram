@@ -11,6 +11,27 @@ const ICONS = {
   verified: "https://www.figma.com/api/mcp/asset/b80090eb-643a-40a8-bc2a-eb6d5a77a06e",
 };
 
+const DATA = {
+  registrations: { completed: 38 },
+  eligibility_quiz: { completed: 27, pending: 2, abandoned: 3 },
+  eligibility_filter: { filtered_in: 24, filtered_out: 3 },
+  eligibility_confirmation: { confirmed: 21, pending: 1, rejected: 2 },
+  esignature: { signed: 15, pending: 1, declined: 1, abandoned: 2 },
+  delivery_info: { provided: 14, abandoned: 1 },
+  kits: { t1: { activated: 12 }, t2: { activated: 7 } },
+  quizzes: { t1: { completed: 10 }, t2: { completed: 5 } },
+  microbiome_data: {
+    t1: { only_bacteria_arrived: 1, only_fungi_arrived: 1, both_arrived: 8 },
+    t2: { only_bacteria_arrived: 1, only_fungi_arrived: 0, both_arrived: 3 },
+  },
+  reports: {
+    t1: { generated: 2, approved: 3, released: 1, seen: 1 },
+    t2: { generated: 1, approved: 0, released: 0, seen: 1 },
+  },
+  total: 10,
+  timestamp: 1781187981329,
+};
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -81,37 +102,37 @@ const P = {
   gap: 18,
   steps: ["Registered", "El. Quiz", "El. Filter", "Confirm", "E-Signature", "Shipping Det."],
   nodes: [
-    ["registered", 0, "Registered", 38, "good", "right", true],
-    ["quiz_completed", 1, "Completed", 27, "good"],
-    ["quiz_pending", 1, "Pending", 2, "neut"],
-    ["quiz_abandoned", 1, "Abandoned", 3, "bad"],
-    ["filter_in", 2, "Filtered In", 24, "good"],
-    ["filter_out", 2, "Filtered Out", 3, "bad"],
-    ["confirmed", 3, "Confirmed", 21, "good"],
-    ["confirm_pending", 3, "Pending", 2, "neut"],
-    ["rejected", 3, "Rejected", 1, "bad"],
-    ["signed", 4, "Signed", 15, "good"],
-    ["esign_pending", 4, "Pending", 1, "neut"],
-    ["declined", 4, "Declined", 1, "bad"],
-    ["esign_abandoned", 4, "Abandoned", 2, "bad"],
-    ["provided", 5, "Provided", 14, "good"],
-    ["ship_abandoned", 5, "Abandoned", 1, "bad"],
+    ["registered", 0, "Registered", DATA.registrations.completed, "good", "right", true],
+    ["quiz_completed", 1, "Completed", DATA.eligibility_quiz.completed, "good"],
+    ["quiz_pending", 1, "Pending", DATA.eligibility_quiz.pending, "neut"],
+    ["quiz_abandoned", 1, "Abandoned", DATA.eligibility_quiz.abandoned, "bad"],
+    ["filter_in", 2, "Filtered In", DATA.eligibility_filter.filtered_in, "good"],
+    ["filter_out", 2, "Filtered Out", DATA.eligibility_filter.filtered_out, "bad"],
+    ["confirmed", 3, "Confirmed", DATA.eligibility_confirmation.confirmed, "good"],
+    ["confirm_pending", 3, "Pending", DATA.eligibility_confirmation.pending, "neut"],
+    ["rejected", 3, "Rejected", DATA.eligibility_confirmation.rejected, "bad"],
+    ["signed", 4, "Signed", DATA.esignature.signed, "good"],
+    ["esign_pending", 4, "Pending", DATA.esignature.pending, "neut"],
+    ["declined", 4, "Declined", DATA.esignature.declined, "bad"],
+    ["esign_abandoned", 4, "Abandoned", DATA.esignature.abandoned, "bad"],
+    ["provided", 5, "Provided", DATA.delivery_info.provided, "good"],
+    ["ship_abandoned", 5, "Abandoned", DATA.delivery_info.abandoned, "bad"],
   ],
   links: [
-    ["registered", "quiz_completed", 27, "good"],
-    ["registered", "quiz_pending", 2, "neut"],
-    ["registered", "quiz_abandoned", 3, "bad"],
-    ["quiz_completed", "filter_in", 24, "good"],
-    ["quiz_completed", "filter_out", 3, "bad"],
-    ["filter_in", "confirmed", 21, "good"],
-    ["filter_in", "confirm_pending", 2, "neut"],
-    ["filter_in", "rejected", 1, "bad"],
-    ["confirmed", "signed", 15, "good"],
-    ["confirmed", "esign_pending", 1, "neut"],
-    ["confirmed", "declined", 1, "bad"],
-    ["confirmed", "esign_abandoned", 2, "bad"],
-    ["signed", "provided", 14, "good"],
-    ["signed", "ship_abandoned", 1, "bad"],
+    ["registered", "quiz_completed", DATA.eligibility_quiz.completed, "good"],
+    ["registered", "quiz_pending", DATA.eligibility_quiz.pending, "neut"],
+    ["registered", "quiz_abandoned", DATA.eligibility_quiz.abandoned, "bad"],
+    ["quiz_completed", "filter_in", DATA.eligibility_filter.filtered_in, "good"],
+    ["quiz_completed", "filter_out", DATA.eligibility_filter.filtered_out, "bad"],
+    ["filter_in", "confirmed", DATA.eligibility_confirmation.confirmed, "good"],
+    ["filter_in", "confirm_pending", DATA.eligibility_confirmation.pending, "neut"],
+    ["filter_in", "rejected", DATA.eligibility_confirmation.rejected, "bad"],
+    ["confirmed", "signed", DATA.esignature.signed, "good"],
+    ["confirmed", "esign_pending", DATA.esignature.pending, "neut"],
+    ["confirmed", "declined", DATA.esignature.declined, "bad"],
+    ["confirmed", "esign_abandoned", DATA.esignature.abandoned, "bad"],
+    ["signed", "provided", DATA.delivery_info.provided, "good"],
+    ["signed", "ship_abandoned", DATA.delivery_info.abandoned, "bad"],
   ],
 };
 
@@ -127,65 +148,49 @@ const KIT_STEPS = [
 
 const KIT_SCALE = 15.7;
 
-const K1 = {
-  w: 1022,
-  h: 221,
-  scale: KIT_SCALE,
-  stepGap: 136.5,
-  left: 120,
-  top: 32.5,
-  nodeW: 17,
-  gap: 14,
-  steps: KIT_STEPS,
-  entries: [["activated", 8, "good"]],
-  nodes: [
-    ["activated", 0, "Activated", 8, "good", "left"],
-    ["completed", 1, "Completed", 7, "good"],
-    ["both", 2, "Both", 6, "good"],
-    ["bacteria", 2, "Only bacteria", 1, "neut"],
-    ["fungi", 2, "Only fungi", 1, "neut"],
-    ["generated", 3, "Generated", 4, "yellow"],
-    ["approved", 4, "Approved", 3, "yellow"],
-    ["released", 5, "Released", 2, "yellow"],
-    ["seen", 6, "Seen", 2, "yellow"],
-  ],
-  links: [
-    ["activated", "completed", 7, "good"],
-    ["completed", "both", 6, "good"],
-    ["completed", "bacteria", 1, "neut"],
-    ["completed", "fungi", 1, "neut"],
-    ["both", "generated", 4, "yellow"],
-    ["generated", "approved", 3, "yellow"],
-    ["approved", "released", 2, "yellow"],
-    ["released", "seen", 2, "yellow"],
-  ],
-};
+function makeKitConfig(key) {
+  const kit = DATA.kits[key];
+  const quiz = DATA.quizzes[key];
+  const microbiome = DATA.microbiome_data[key];
+  const reports = DATA.reports[key];
 
-const K2 = {
-  ...K1,
-  entries: [["activated", 8, "good"]],
-  nodes: [
-    ["activated", 0, "Activated", 8, "good", "left"],
-    ["completed", 1, "Completed", 7, "good"],
-    ["both", 2, "Both", 6, "good"],
-    ["bacteria", 2, "Only bacteria", 1, "neut"],
-    ["fungi", 2, "Only fungi", 1, "neut"],
-    ["generated", 3, "Generated", 4, "yellow"],
-    ["approved", 4, "Approved", 3, "yellow"],
-    ["released", 5, "Released", 2, "yellow"],
-    ["seen", 6, "Seen", 2, "yellow"],
-  ],
-  links: [
-    ["activated", "completed", 7, "good"],
-    ["completed", "both", 6, "good"],
-    ["completed", "bacteria", 1, "neut"],
-    ["completed", "fungi", 1, "neut"],
-    ["both", "generated", 4, "yellow"],
-    ["generated", "approved", 3, "yellow"],
-    ["approved", "released", 2, "yellow"],
-    ["released", "seen", 2, "yellow"],
-  ],
-};
+  return {
+    w: 1022,
+    h: 221,
+    scale: KIT_SCALE,
+    stepGap: 136.5,
+    left: 120,
+    top: 32.5,
+    nodeW: 17,
+    gap: 14,
+    steps: KIT_STEPS,
+    entries: [["activated", kit.activated, "good"]],
+    nodes: [
+      ["activated", 0, "Activated", kit.activated, "good", "left"],
+      ["completed", 1, "Completed", quiz.completed, "good"],
+      ["both", 2, "Both", microbiome.both_arrived, "good"],
+      ["bacteria", 2, "Only bacteria", microbiome.only_bacteria_arrived, "neut"],
+      ["fungi", 2, "Only fungi", microbiome.only_fungi_arrived, "neut"],
+      ["generated", 3, "Generated", reports.generated, "yellow"],
+      ["approved", 4, "Approved", reports.approved, "yellow"],
+      ["released", 5, "Released", reports.released, "yellow"],
+      ["seen", 6, "Seen", reports.seen, "yellow"],
+    ],
+    links: [
+      ["activated", "completed", Math.min(kit.activated, quiz.completed), "good"],
+      ["completed", "both", Math.min(quiz.completed, microbiome.both_arrived), "good"],
+      ["completed", "bacteria", Math.min(quiz.completed, microbiome.only_bacteria_arrived), "neut"],
+      ["completed", "fungi", Math.min(quiz.completed, microbiome.only_fungi_arrived), "neut"],
+      ["both", "generated", Math.min(microbiome.both_arrived, reports.generated), "yellow"],
+      ["generated", "approved", Math.min(reports.generated, reports.approved), "yellow"],
+      ["approved", "released", Math.min(reports.approved, reports.released), "yellow"],
+      ["released", "seen", Math.min(reports.released, reports.seen), "yellow"],
+    ],
+  };
+}
+
+const K1 = makeKitConfig("t1");
+const K2 = makeKitConfig("t2");
 
 function build(cfg) {
   const map = {};
@@ -524,10 +529,10 @@ function App() {
 
                 <div className="body">
                   <div className="stats">
-                    <Stat src={ICONS.people} value="38" lines={["Total", "Participants"]} />
-                    <Stat src={ICONS.filter} value="24" lines={["Filtered In", "Participants"]} />
-                    <Stat src={ICONS.thumb} value="21" lines={["Confirmed", "Participants"]} />
-                    <Stat src={ICONS.verified} value="3" lines={["Completed", "Tests"]} />
+                    <Stat src={ICONS.people} value={DATA.registrations.completed} lines={["Total", "Participants"]} />
+                    <Stat src={ICONS.filter} value={DATA.eligibility_filter.filtered_in} lines={["Filtered In", "Participants"]} />
+                    <Stat src={ICONS.thumb} value={DATA.eligibility_confirmation.confirmed} lines={["Confirmed", "Participants"]} />
+                    <Stat src={ICONS.verified} value={DATA.total} lines={["Completed", "Tests"]} />
                   </div>
 
                   <DiagramBoard>
