@@ -1,7 +1,9 @@
 {
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "start": "vite --host 0.0.0.0"
+    "start": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
