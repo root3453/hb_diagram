@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 const styles = `
@@ -33,6 +34,12 @@ const styles = `
     border-radius: 12px;
     margin-bottom: 24px;
     box-shadow: 0 12px 32px rgba(255, 45, 45, 0.35);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(1) rotate(0deg); border-radius: 12px; }
+    50% { transform: scale(1.18) rotate(8deg); border-radius: 40px; }
+    100% { transform: scale(1) rotate(0deg); border-radius: 12px; }
   }
   h1 {
     margin: 0 0 12px;
@@ -49,17 +56,39 @@ const styles = `
     padding: 2px 6px;
     border-radius: 6px;
   }
+  .counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #e7f2f0;
+    border-radius: 10px;
+    font-weight: 700;
+  }
 `;
 
 function App() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setSeconds((value) => value + 1);
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <>
       <style>{styles}</style>
       <main className="smoke-page">
         <section className="smoke-card">
           <div className="red-square" />
-          <h1>Vercel deploy is connected ✅</h1>
-          <p>If you see this red square, GitHub → Vercel → browser works.</p>
+          <h1>React smoke test is running ✅</h1>
+          <p>The square is animated by React-rendered CSS.</p>
+          <p>The counter below is React state updating every second.</p>
+          <div className="counter">React seconds: {seconds}</div>
           <p>Repository: <code>root3453/hb_diagram</code></p>
           <p>Branch: <code>main</code></p>
         </section>
