@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 
-const { useMemo } = React;
+const { useCallback, useEffect, useMemo, useRef, useState } = React;
 
 const ICONS = {
   menu: "/MenuOpenFilled.svg",
@@ -32,13 +32,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .back{width:40px;height:40px;flex:0 0 40px}
 .back img{width:40px;height:40px;display:block}
 .title{font-size:40px;font-weight:400;line-height:50px;white-space:nowrap;color:#282828}
-.panel{flex:1 1 auto;min-height:0;width:100%;background:#fff;border-radius:8px 8px 0 0;padding:24px 0 16px;display:flex;flex-direction:column;gap:50px;overflow:hidden}
+.panel{height:1138px;flex:0 0 1138px;width:100%;background:#fff;border-radius:8px 8px 0 0;padding:24px 0 16px;display:flex;flex-direction:column;gap:50px;overflow:hidden}
 .tabs-wrap{padding-left:16px;flex:0 0 auto}
 .tabs{height:48px;width:556px;display:flex;gap:16px;align-items:center}
 .tab{height:48px;position:relative;padding:0 8px;font-size:15px;font-weight:500;line-height:26px;letter-spacing:.46px;text-transform:uppercase;opacity:.7}
 .tab.active{opacity:1}
 .tab.active:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:#282828}
-.body{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;gap:40px}
+.body{height:1000px;flex:0 0 1000px;width:100%;display:flex;flex-direction:column;gap:40px}
 .stats{display:flex;gap:54px;align-items:center;padding:0 40px;flex:0 0 auto;overflow:hidden}
 .stat{display:flex;gap:16px;align-items:flex-start;flex:0 0 auto;overflow:hidden}
 .stat-icon{width:30px;height:30px;flex:0 0 30px;overflow:hidden}
@@ -46,22 +46,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .stat-copy{display:flex;gap:16px;align-items:flex-end;color:#282828}
 .stat-value{font-size:50px;font-weight:400;line-height:.8;letter-spacing:-1px;white-space:nowrap}
 .stat-label{width:109px;font-size:16px;font-weight:400;line-height:1.3;color:#282828}
-.grid{flex:1 1 auto;min-height:0;width:100%;padding:0 16px;display:flex;gap:16px;align-items:stretch;overflow:hidden}
-.flow-card{width:870px;flex:0 0 870px;background:#fbfaf9;border-radius:4px;padding:24px 0 24px 24px;display:flex;flex-direction:column;gap:24px;overflow:hidden}
-.kits{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:16px;justify-content:flex-start}
-.kit-card{height:340px;flex:0 0 340px;min-width:0;background:#fafaf9;border-radius:4px;padding:24px 24px 24px 0;display:flex;flex-direction:column;gap:24px;overflow:hidden}
-.card-title{height:50px;flex:0 0 50px;font-size:32px;font-weight:400;line-height:50px;color:#282828;white-space:nowrap}
-.kit-card .card-title{padding-left:40px}
-.chart{flex:1 1 auto;min-width:0;min-height:0;overflow:hidden;position:relative;background-image:radial-gradient(rgba(40,40,40,.08) 1px,transparent 1px);background-size:16px 16px}
+.diagram-viewport{height:918px;flex:0 0 918px;width:100%;position:relative;overflow:hidden;border-radius:4px;background-color:#fbfaf9;background-image:radial-gradient(rgba(40,40,40,.08) 1px,transparent 1px);background-size:16px 16px;cursor:grab;touch-action:none;user-select:none}
+.diagram-viewport.dragging{cursor:grabbing}
+.diagram-canvas{position:absolute;left:24px;top:24px;width:1893px;height:870px;display:flex;align-items:flex-start;gap:56px;will-change:transform}
+.flow-section{display:flex;flex-direction:column;align-items:flex-start;gap:24px;flex:0 0 auto}
+.participant-section{width:815px}
+.tests-column{width:1022px;flex:0 0 1022px;display:flex;flex-direction:column;align-items:flex-start;gap:24px}
+.test-section{width:1022px}
+.section-title{height:50px;flex:0 0 50px;display:flex;align-items:center;font-size:32px;font-weight:400;line-height:50px;color:#282828;white-space:nowrap;cursor:default}
+.chart{position:relative;overflow:hidden;flex:0 0 auto}
+.participant-chart{width:815px;height:796px}
+.test-chart{width:1022px;height:221px}
 .stage{position:relative;width:100%;height:100%;overflow:hidden}
-.inner{position:relative;height:100%;min-width:var(--w)}
+.inner{position:relative;height:100%;width:var(--w);min-width:var(--w)}
 .svg{position:absolute;inset:0;width:var(--w);height:var(--h);overflow:visible;pointer-events:none}
-.node{position:absolute;border-radius:0;outline:1px solid rgba(0,0,0,.04)}
+.flow-path{transition:opacity .15s ease}
+.node{position:absolute;border-radius:0;outline:1px solid rgba(0,0,0,.04);transition:opacity .15s ease;z-index:1;cursor:default}
 .node.good{background:#c1ca85}.node.bad{background:#fa7d88}.node.neut{background:#bb93c2}.node.yellow{background:#ede280}
-.label{position:absolute;top:50%;transform:translateY(-50%);font-size:12px;line-height:1.2;color:#111827;white-space:nowrap;text-decoration:underline;text-underline-offset:2px}
-.label.left{right:calc(100% + 10px);text-align:right}.label.right{left:calc(100% + 10px);text-align:left}
+.label{position:absolute;font-size:12px;line-height:1.2;color:#111827;white-space:nowrap;text-decoration:underline;text-underline-offset:2px;transition:opacity .15s ease;z-index:3;cursor:pointer}
+.label.left{transform:translate(-100%,-50%);text-align:right}
+.label.right{transform:translateY(-50%);text-align:left}
 .label b{font-weight:700}
-.step{position:absolute;top:0;transform:translateX(-50%);font-size:14px;font-weight:500;line-height:1.2;color:#111827;white-space:nowrap;text-align:center;z-index:2}
+.step{position:absolute;top:0;transform:translateX(-50%);font-size:14px;font-weight:500;line-height:1.2;color:#111827;white-space:nowrap;text-align:center;z-index:2;cursor:default}
 `;
 
 const P = {
@@ -69,7 +75,7 @@ const P = {
   h: 678,
   scale: 16.9,
   stepGap: 146,
-  left: 0,
+  left: 31,
   top: 30,
   nodeW: 16,
   gap: 18,
@@ -231,6 +237,9 @@ function build(cfg) {
       const mx = (x1 + x2) / 2;
 
       return {
+        id: `${from}-${to}`,
+        from,
+        to,
         d: `M${x1} ${y1} C${mx} ${y1},${mx} ${y2},${x2} ${y2}`,
         sw,
         type,
@@ -240,24 +249,32 @@ function build(cfg) {
   return { nodes: Object.values(map), paths };
 }
 
-function Sankey({ cfg }) {
+function Sankey({ cfg, chartId, hovered, onHover }) {
   const data = useMemo(() => build(cfg), [cfg]);
+  const hasHoveredLabel = hovered !== null;
+  const activeChart = hovered?.chartId === chartId;
 
   return (
     <div className="stage" style={{ "--w": `${cfg.w}px`, "--h": `${cfg.h}px` }}>
       <div className="inner">
         <svg className="svg" width={cfg.w} height={cfg.h} viewBox={`0 0 ${cfg.w} ${cfg.h}`}>
-          {data.paths.map((path, index) => (
-            <path
-              key={index}
-              d={path.d}
-              fill="none"
-              stroke={`var(--${path.type})`}
-              strokeWidth={path.sw}
-              strokeLinecap="butt"
-              opacity="0.62"
-            />
-          ))}
+          {data.paths.map((path) => {
+            const isIncomingFlow = activeChart && path.to === hovered?.nodeId;
+            const opacity = hasHoveredLabel ? (isIncomingFlow ? 0.35 : 0.15) : 0.35;
+
+            return (
+              <path
+                className="flow-path"
+                key={path.id}
+                d={path.d}
+                fill="none"
+                stroke={`var(--${path.type})`}
+                strokeWidth={path.sw}
+                strokeLinecap="butt"
+                opacity={opacity}
+              />
+            );
+          })}
         </svg>
 
         {cfg.steps.map((step, index) => (
@@ -270,19 +287,139 @@ function Sankey({ cfg }) {
           </div>
         ))}
 
-        {data.nodes.map((node) => (
-          <div
-            className={`node ${node.type}`}
-            key={node.id}
-            style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
-          >
-            {!node.hideLabel && (
-              <div className={`label ${node.side || "left"}`}>
-                {node.label} (<b>{node.value}</b>)
-              </div>
-            )}
-          </div>
-        ))}
+        {data.nodes.map((node) => {
+          const isActiveNode = activeChart && hovered?.nodeId === node.id;
+          const opacity = hasHoveredLabel ? (isActiveNode ? 1 : 0.5) : 1;
+
+          return (
+            <div
+              className={`node ${node.type}`}
+              key={node.id}
+              style={{ left: node.x, top: node.y, width: node.w, height: node.h, opacity }}
+            />
+          );
+        })}
+
+        {data.nodes.map((node) => {
+          if (node.hideLabel) return null;
+
+          const isActiveLabel = activeChart && hovered?.nodeId === node.id;
+          const opacity = hasHoveredLabel ? (isActiveLabel ? 1 : 0.7) : 1;
+          const isRight = node.side === "right";
+
+          return (
+            <div
+              className={`label ${isRight ? "right" : "left"}`}
+              key={`${node.id}-label`}
+              style={{
+                left: isRight ? node.x + node.w + 10 : node.x - 10,
+                top: node.y + node.h / 2,
+                opacity,
+              }}
+              onMouseEnter={() => onHover({ chartId, nodeId: node.id })}
+              onMouseLeave={() => onHover(null)}
+            >
+              {node.label} (<b>{node.value}</b>)
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function clampPan(point, viewport, canvas) {
+  if (!viewport || !canvas) return point;
+
+  const minX = Math.min(0, viewport.clientWidth - canvas.offsetWidth - 48);
+  const minY = Math.min(0, viewport.clientHeight - canvas.offsetHeight - 48);
+
+  return {
+    x: Math.max(minX, Math.min(0, point.x)),
+    y: Math.max(minY, Math.min(0, point.y)),
+  };
+}
+
+function DiagramBoard({ children }) {
+  const viewportRef = useRef(null);
+  const canvasRef = useRef(null);
+  const dragRef = useRef(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+
+  const constrainPan = useCallback(
+    (point) => clampPan(point, viewportRef.current, canvasRef.current),
+    [],
+  );
+
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return undefined;
+
+    const observer = new ResizeObserver(() => {
+      setPan((current) => constrainPan(current));
+    });
+
+    if (viewportRef.current) observer.observe(viewportRef.current);
+    if (canvasRef.current) observer.observe(canvasRef.current);
+
+    return () => observer.disconnect();
+  }, [constrainPan]);
+
+  const handlePointerDown = (event) => {
+    if (event.button !== 0) return;
+    if (event.target.closest(".label,.node,.step,.section-title")) return;
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      panX: pan.x,
+      panY: pan.y,
+    };
+    setDragging(true);
+  };
+
+  const handlePointerMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    setPan(
+      constrainPan({
+        x: drag.panX + event.clientX - drag.startX,
+        y: drag.panY + event.clientY - drag.startY,
+      }),
+    );
+  };
+
+  const stopDragging = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    dragRef.current = null;
+    setDragging(false);
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  return (
+    <div
+      ref={viewportRef}
+      className={`diagram-viewport${dragging ? " dragging" : ""}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={stopDragging}
+      onPointerCancel={stopDragging}
+    >
+      <div
+        ref={canvasRef}
+        className="diagram-canvas"
+        style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}
+      >
+        {children}
       </div>
     </div>
   );
@@ -305,6 +442,8 @@ function Stat({ src, value, lines }) {
 }
 
 function App() {
+  const [hovered, setHovered] = useState(null);
+
   return (
     <>
       <style>{css}</style>
@@ -340,24 +479,35 @@ function App() {
                     <Stat src={ICONS.verified} value="3" lines={["Completed", "Tests"]} />
                   </div>
 
-                  <div className="grid">
-                    <section className="flow-card">
-                      <h2 className="card-title">Participant flow</h2>
-                      <div className="chart"><Sankey cfg={P} /></div>
+                  <DiagramBoard>
+                    <section className="flow-section participant-section">
+                      <h2 className="section-title">Participant flow</h2>
+                      <div className="chart participant-chart">
+                        <Sankey
+                          cfg={P}
+                          chartId="participant"
+                          hovered={hovered}
+                          onHover={setHovered}
+                        />
+                      </div>
                     </section>
 
-                    <div className="kits">
-                      <section className="kit-card">
-                        <h2 className="card-title">Kit #1</h2>
-                        <div className="chart"><Sankey cfg={K1} /></div>
+                    <div className="tests-column">
+                      <section className="flow-section test-section">
+                        <h2 className="section-title">Test 1</h2>
+                        <div className="chart test-chart">
+                          <Sankey cfg={K1} chartId="test-1" hovered={hovered} onHover={setHovered} />
+                        </div>
                       </section>
 
-                      <section className="kit-card">
-                        <h2 className="card-title">Kit #2</h2>
-                        <div className="chart"><Sankey cfg={K2} /></div>
+                      <section className="flow-section test-section">
+                        <h2 className="section-title">Test 2</h2>
+                        <div className="chart test-chart">
+                          <Sankey cfg={K2} chartId="test-2" hovered={hovered} onHover={setHovered} />
+                        </div>
                       </section>
                     </div>
-                  </div>
+                  </DiagramBoard>
                 </div>
               </div>
             </div>
