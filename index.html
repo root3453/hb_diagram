@@ -1,21 +1,13 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HB Diagram</title>
-  <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f7f6f0; }
-    #root { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .fallback { background: white; padding: 32px; border: 1px solid #ddd; }
-    .square { width: 180px; height: 180px; background: red; margin-bottom: 20px; }
-  </style>
+  <link rel="stylesheet" href="/entry-flow.css" />
 </head>
 <body>
-  <div id="root">
-    <div class="fallback">
-      <div class="square"></div>
-      <h1>Static fallback works</h1>
-      <p>Vercel serves index.html.</p>
-    </div>
-  </div>
+  <div id="root"></div>
   <script type="module" src="/src/App.jsx"></script>
 </body>
 </html>
