@@ -1,10 +1,1 @@
-.test-chart .node.good[style*="left: 120px"]::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 100%;
-  width: 120px;
-  height: 100%;
-  background: rgba(193, 202, 133, 0.35);
-  pointer-events: none;
-}
+/* Entry flows are rendered by SVG in src/App.jsx. */
