@@ -22,7 +22,7 @@ const DATA = {
   quizzes: { t1: { completed: 15 }, t2: { completed: 10 } },
   microbiome_data: {
     t1: { only_bacteria_arrived: 1, only_fungi_arrived: 1, both_arrived: 13 },
-    t2: { only_bacteria_arrived: 3, only_fungi_arrived: 1, both_arrived: 7 },
+    t2: { only_bacteria_arrived: 2, only_fungi_arrived: 1, both_arrived: 7 },
   },
   reports: {
     t1: { generated: 11, approved: 9, released: 8, seen: 5 },
@@ -69,7 +69,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .stat-label{width:109px;font-size:16px;font-weight:400;line-height:1.3;color:#282828}
 .diagram-viewport{height:918px;flex:0 0 918px;width:100%;position:relative;overflow:hidden;border-radius:4px;background-color:#fbfaf9;background-image:radial-gradient(rgba(40,40,40,.08) 1px,transparent 1px);background-size:16px 16px;cursor:grab;touch-action:none;user-select:none}
 .diagram-viewport.dragging{cursor:grabbing}
-.diagram-canvas{position:absolute;left:24px;top:24px;width:1893px;height:870px;display:flex;align-items:flex-start;gap:56px;will-change:transform}
+.diagram-canvas{position:absolute;left:24px;top:24px;width:1893px;min-height:870px;height:auto;display:flex;align-items:flex-start;gap:56px;will-change:transform}
 .flow-section{display:flex;flex-direction:column;align-items:flex-start;gap:24px;flex:0 0 auto}
 .participant-section{width:815px}
 .tests-column{width:1022px;flex:0 0 1022px;display:flex;flex-direction:column;align-items:flex-start;gap:24px}
@@ -77,7 +77,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .section-title{height:50px;flex:0 0 50px;display:flex;align-items:center;font-size:32px;font-weight:400;line-height:50px;color:#282828;white-space:nowrap;cursor:default}
 .chart{position:relative;overflow:hidden;flex:0 0 auto}
 .participant-chart{width:815px;height:796px}
-.test-chart{width:1022px;height:221px}
+.test-chart{width:1022px}
 .stage{position:relative;width:100%;height:100%;overflow:hidden}
 .inner{position:relative;height:100%;width:var(--w);min-width:var(--w)}
 .svg{position:absolute;inset:0;width:var(--w);height:var(--h);overflow:visible;pointer-events:none}
@@ -192,6 +192,24 @@ function makeKitConfig(key) {
 const K1 = makeKitConfig("t1");
 const K2 = makeKitConfig("t2");
 
+function getRequiredChartHeight(cfg) {
+  let maxBottom = cfg.top;
+
+  cfg.steps.forEach((_, step) => {
+    let y = cfg.top;
+
+    cfg.nodes
+      .filter((node) => node[1] === step && node[3] > 0)
+      .forEach((node) => {
+        y += node[3] * cfg.scale;
+        maxBottom = Math.max(maxBottom, y);
+        y += cfg.gap;
+      });
+  });
+
+  return Math.max(cfg.h, Math.ceil(maxBottom + 24));
+}
+
 function build(cfg) {
   const map = {};
   const visibleNodes = cfg.nodes.filter((node) => node[3] > 0);
@@ -282,13 +300,14 @@ function build(cfg) {
 
 function Sankey({ cfg, chartId, hovered, onHover }) {
   const data = useMemo(() => build(cfg), [cfg]);
+  const chartHeight = getRequiredChartHeight(cfg);
   const hasHoveredLabel = hovered !== null;
   const activeChart = hovered?.chartId === chartId;
 
   return (
-    <div className="stage" style={{ "--w": `${cfg.w}px`, "--h": `${cfg.h}px` }}>
+    <div className="stage" style={{ "--w": `${cfg.w}px`, "--h": `${chartHeight}px` }}>
       <div className="inner">
-        <svg className="svg" width={cfg.w} height={cfg.h} viewBox={`0 0 ${cfg.w} ${cfg.h}`}>
+        <svg className="svg" width={cfg.w} height={chartHeight} viewBox={`0 0 ${cfg.w} ${chartHeight}`}>
           {data.paths.map((path) => {
             const isIncomingFlow = activeChart && path.to === hovered?.nodeId;
             const opacity = hasHoveredLabel ? (isIncomingFlow ? 0.35 : 0.15) : 0.35;
@@ -551,14 +570,14 @@ function App() {
                     <div className="tests-column">
                       <section className="flow-section test-section">
                         <h2 className="section-title">Test 1</h2>
-                        <div className="chart test-chart">
+                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K1) }}>
                           <Sankey cfg={K1} chartId="test-1" hovered={hovered} onHover={setHovered} />
                         </div>
                       </section>
 
                       <section className="flow-section test-section">
                         <h2 className="section-title">Test 2</h2>
-                        <div className="chart test-chart">
+                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K2) }}>
                           <Sankey cfg={K2} chartId="test-2" hovered={hovered} onHover={setHovered} />
                         </div>
                       </section>
