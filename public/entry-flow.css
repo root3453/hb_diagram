@@ -28,38 +28,99 @@
   flex: 1 1 auto !important;
 }
 
+/* Split pane branch. The outer viewport never scrolls or drags. */
 .diagram-viewport {
+  --split-left: calc(50% - 8px);
   height: auto !important;
   min-height: 0 !important;
   flex: 1 1 auto !important;
-  overflow: auto !important;
-  padding: 24px !important;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(216, 200, 219, 0.7) transparent;
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  cursor: default !important;
+  touch-action: auto !important;
+  user-select: auto !important;
+  background: #fbfaf9 !important;
+}
+
+.diagram-viewport.dragging {
+  cursor: default !important;
 }
 
 .diagram-canvas {
   position: relative !important;
-  left: auto !important;
-  top: auto !important;
-  width: 1893px !important;
-  min-height: 870px !important;
-  height: auto !important;
+  inset: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 16px !important;
   transform: none !important;
   will-change: auto !important;
+  overflow: hidden !important;
 }
 
-.diagram-viewport::-webkit-scrollbar {
+.participant-section,
+.tests-column {
+  height: 100% !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(216, 200, 219, 0.7) transparent;
+  background-color: #fbfaf9;
+  background-image: radial-gradient(rgba(40, 40, 40, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.participant-section {
+  width: var(--split-left) !important;
+  flex: 0 0 var(--split-left) !important;
+  padding: 24px 0 24px 24px !important;
+}
+
+.tests-column {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 0 !important;
+  padding: 24px 0 24px 24px !important;
+}
+
+.diagram-viewport[data-split-state="left-collapsed"] .participant-section,
+.diagram-viewport[data-split-state="right-collapsed"] .tests-column {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.participant-section > .section-title,
+.participant-section > .participant-chart {
+  width: 815px !important;
+  flex: 0 0 auto !important;
+}
+
+.tests-column > .test-section {
+  width: 1022px !important;
+  flex: 0 0 auto !important;
+}
+
+/* Native scrollbars are shown only when a pane actually overflows. */
+.participant-section::-webkit-scrollbar,
+.tests-column::-webkit-scrollbar {
   width: 14px;
   height: 14px;
 }
 
-.diagram-viewport::-webkit-scrollbar-track {
+.participant-section::-webkit-scrollbar-track,
+.tests-column::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.diagram-viewport::-webkit-scrollbar-thumb {
+.participant-section::-webkit-scrollbar-thumb,
+.tests-column::-webkit-scrollbar-thumb {
   min-width: 40px;
   min-height: 40px;
   border: 4px solid transparent;
@@ -68,6 +129,69 @@
   background-clip: padding-box;
 }
 
-.diagram-viewport::-webkit-scrollbar-corner {
+.participant-section::-webkit-scrollbar-corner,
+.tests-column::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* The divider is mounted outside React and positioned over the 16 px gap. */
+.split-pane-divider {
+  position: fixed;
+  z-index: 1000;
+  width: 16px;
+  min-width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  border-left: 1px solid #eeede6;
+  border-right: 1px solid #eeede6;
+  background: #fff;
+  color: #282828;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.split-pane-divider.is-dragging {
+  background: #f7f6f0;
+}
+
+.split-pane-divider__button {
+  width: 24px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: inherit;
+}
+
+.split-pane-divider__dots {
+  width: 4px;
+  height: 18px;
+  display: block;
+  background:
+    radial-gradient(circle, currentColor 1.5px, transparent 1.75px) center 1px / 4px 6px repeat-y;
+}
+
+.split-pane-divider__arrow {
+  display: none;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.split-pane-divider.is-collapsed {
+  cursor: pointer;
+}
+
+.split-pane-divider.is-collapsed .split-pane-divider__dots {
+  display: none;
+}
+
+.split-pane-divider.is-collapsed .split-pane-divider__arrow {
+  display: block;
 }
