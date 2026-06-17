@@ -1,0 +1,76 @@
+name: Add Test 3 and Test 4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/add-test-3-4.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Run Test 3 and Test 4 insertion'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch App.jsx
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/App.jsx')
+          text = path.read_text()
+
+          old = '''                      <section className="flow-section test-section">
+                        <h2 className="section-title">Test 2</h2>
+                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K2) }}>
+                          <Sankey cfg={K2} chartId="test-2" hovered={hovered} onHover={setHovered} />
+                        </div>
+                      </section>
+                    </div>'''
+
+          new = '''                      <section className="flow-section test-section">
+                        <h2 className="section-title">Test 2</h2>
+                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K2) }}>
+                          <Sankey cfg={K2} chartId="test-2" hovered={hovered} onHover={setHovered} />
+                        </div>
+                      </section>
+
+                      <section className="flow-section test-section">
+                        <h2 className="section-title">Test 3</h2>
+                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K1) }}>
+                          <Sankey cfg={K1} chartId="test-3" hovered={hovered} onHover={setHovered} />
+                        </div>
+                      </section>
+
+                      <section className="flow-section test-section">
+                        <h2 className="section-title">Test 4</h2>
+                        <div className="chart test-chart" style={{ height: getRequiredChartHeight(K2) }}>
+                          <Sankey cfg={K2} chartId="test-4" hovered={hovered} onHover={setHovered} />
+                        </div>
+                      </section>
+                    </div>'''
+
+          if old not in text:
+              raise SystemExit('Expected Test 2 block not found')
+
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit changes and remove workflow
+        run: |
+          rm .github/workflows/add-test-3-4.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.jsx .github/workflows/add-test-3-4.yml
+          git commit -m "Add Test 3 and Test 4 flows"
+          git push
