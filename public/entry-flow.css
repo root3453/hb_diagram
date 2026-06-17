@@ -1,1 +1,6 @@
 /* Entry flows are rendered by SVG in src/App.jsx. */
+
+.section-title {
+  width: 100%;
+  border-bottom: 1px dashed #4c4c47;
+}
